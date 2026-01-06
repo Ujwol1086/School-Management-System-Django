@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Teacher Dashboard - Student Management System{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Teacher Dashboard</h1>
+                    <p class="mt-1 text-sm text-gray-500">Welcome, {{ teacher.name }}! Manage your courses and track attendance.</p>
+                </div>
+                <div class="bg-indigo-100 rounded-lg px-4 py-2">
+                    <p class="text-sm font-medium text-indigo-800">Total Courses: <span class="text-lg font-bold">{{ total_courses }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Cards Grid -->
+        {% if course_data %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in course_data %}
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden">
+                <!-- Course Header -->
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white">{{ item.course.name }}</h2>
+                    <p class="text-sm text-indigo-100 mt-1">Subject: {{ item.course.teacher.subject }}</p>
+                </div>
+
+                <!-- Course Statistics -->
+                <div class="p-6">
+                    <!-- Statistics Grid -->
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <!-- Enrolled Students -->
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <div class="flex items-center">
+                                <div class="bg-blue-500 rounded-full p-2 mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 uppercase tracking-wide">Students</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ item.enrolled_students }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Classes Conducted -->
+                        <div class="bg-green-50 rounded-lg p-4 border border-green-100">
+                            <div class="flex items-center">
+                                <div class="bg-green-500 rounded-full p-2 mr-3">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-600 uppercase tracking-wide">Classes</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ item.total_classes }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Summary -->
+                    <div class="border-t border-gray-200 pt-4 mb-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Attendance Summary</h3>
+                        <div class="space-y-2">
+                            <!-- Present Count -->
+                            <div class="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                                    <span class="text-sm font-medium text-gray-700">Present</span>
+                                </div>
+                                <span class="text-sm font-bold text-green-700">{{ item.present_count }}</span>
+                            </div>
+                            <!-- Absent Count -->
+                            <div class="flex items-center justify-between bg-red-50 rounded-lg px-3 py-2">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                                    <span class="text-sm font-medium text-gray-700">Absent</span>
+                                </div>
+                                <span class="text-sm font-bold text-red-700">{{ item.absent_count }}</span>
+                            </div>
+                            <!-- Total Records -->
+                            <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 bg-gray-400 rounded-full mr-2"></div>
+                                    <span class="text-sm font-medium text-gray-700">Total Records</span>
+                                </div>
+                                <span class="text-sm font-bold text-gray-700">{{ item.total_attendance_records }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <a href="{% url 'bulk_attendance' %}?course={{ item.course.id }}" 
+                       class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg text-center transition-colors duration-200 shadow-md hover:shadow-lg">
+                        <div class="flex items-center justify-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+                            </svg>
+                            Mark Attendance
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-xl shadow-md p-12 text-center">
+            <div class="max-w-md mx-auto">
+                <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No Courses Assigned</h3>
+                <p class="text-gray-600 mb-6">You don't have any courses assigned to you yet. Please contact the administrator.</p>
+                <a href="{% url 'dashboard' %}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200">
+                    Go to Main Dashboard
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

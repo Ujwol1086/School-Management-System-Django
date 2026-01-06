@@ -1,5 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
+
 # Create your models here.
 
 # Relationships
@@ -9,6 +11,7 @@ from django.core.exceptions import ValidationError
 # Attendance connects Student + Course + Date
 
 class Student(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=50)
     roll_no = models.IntegerField(unique=True)
     email = models.EmailField()
@@ -18,6 +21,7 @@ class Student(models.Model):
         return self.name
     
 class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=50)
     email = models.EmailField()
     subject = models.CharField(max_length=20)
