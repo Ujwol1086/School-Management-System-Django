@@ -1,12 +1,35 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
 from django.http import Http404
 from django.db.models import Count, Q
-from .forms import AttendanceForm
+from django.contrib import messages
+from .forms import AttendanceForm, UserRegistrationForm
 from .models import Course, Attendance, Student, Teacher
 from datetime import date
 
 # Create your views here.
+
+def register(request):
+    """
+    User registration view.
+    Creates a new user account and automatically logs them in.
+    """
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Automatically log in the user after registration
+            login(request, user)
+            messages.success(request, f'Welcome, {user.username}! Your account has been created successfully.')
+            return redirect('dashboard')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'core/register.html', {'form': form})
 
 @login_required
 def dashboard(request):
