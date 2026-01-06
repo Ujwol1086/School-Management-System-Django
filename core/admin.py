@@ -20,3 +20,4 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_display = ('student', 'course', 'date', 'status')
     list_filter = ('course', 'date', 'status')
     list_editable = ('status',)
+    readonly_fields = ('date',)
