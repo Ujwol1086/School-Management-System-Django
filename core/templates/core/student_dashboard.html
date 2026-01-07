@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Dashboard - Student Management System{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">My Dashboard</h1>
+                    <p class="mt-1 text-sm text-gray-500">Welcome, {{ student.name }}! Track your courses and attendance.</p>
+                </div>
+                <div class="bg-blue-100 rounded-lg px-4 py-2">
+                    <p class="text-sm font-medium text-blue-800">Roll No: <span class="text-lg font-bold">{{ student.roll_no }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Total Courses -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Enrolled Courses</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_courses }}</p>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-3">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overall Attendance Percentage -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Attendance Rate</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ overall_percentage }}%</p>
+                    </div>
+                    <div class="bg-green-100 rounded-full p-3">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Present -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-emerald-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Present</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_present }}</p>
+                    </div>
+                    <div class="bg-emerald-100 rounded-full p-3">
+                        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Absent -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Total Absent</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_absent }}</p>
+                    </div>
+                    <div class="bg-red-100 rounded-full p-3">
+                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Course Cards Grid -->
+        {% if course_data %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {% for item in course_data %}
+            <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden">
+                <!-- Course Header -->
+                <div class="bg-gradient-to-r from-blue-500 to-cyan-600 px-6 py-4">
+                    <h2 class="text-xl font-bold text-white">{{ item.course.name }}</h2>
+                    <p class="text-sm text-blue-100 mt-1">Teacher: {{ item.teacher_name }}</p>
+                </div>
+
+                <!-- Course Statistics -->
+                <div class="p-6">
+                    <!-- Attendance Percentage -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-gray-700">Attendance</span>
+                            <span class="text-lg font-bold {% if item.attendance_percentage >= 75 %}text-green-600{% elif item.attendance_percentage >= 50 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ item.attendance_percentage }}%
+                            </span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="h-3 rounded-full {% if item.attendance_percentage >= 75 %}bg-green-500{% elif item.attendance_percentage >= 50 %}bg-yellow-500{% else %}bg-red-500{% endif %}" 
+                                 style="width: {{ item.attendance_percentage }}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Grid -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <!-- Present Count -->
+                        <div class="bg-green-50 rounded-lg p-3 text-center border border-green-100">
+                            <p class="text-xs text-gray-600 uppercase tracking-wide mb-1">Present</p>
+                            <p class="text-2xl font-bold text-green-700">{{ item.present_count }}</p>
+                        </div>
+                        <!-- Absent Count -->
+                        <div class="bg-red-50 rounded-lg p-3 text-center border border-red-100">
+                            <p class="text-xs text-gray-600 uppercase tracking-wide mb-1">Absent</p>
+                            <p class="text-2xl font-bold text-red-700">{{ item.absent_count }}</p>
+                        </div>
+                        <!-- Total Classes -->
+                        <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                            <p class="text-xs text-gray-600 uppercase tracking-wide mb-1">Total</p>
+                            <p class="text-2xl font-bold text-gray-700">{{ item.total_records }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Recent Attendance -->
+                    {% if item.recent_attendance %}
+                    <div class="border-t border-gray-200 pt-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wide">Recent Attendance</h3>
+                        <div class="space-y-2">
+                            {% for record in item.recent_attendance %}
+                            <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-2 {% if record.status %}bg-green-500{% else %}bg-red-500{% endif %}"></div>
+                                    <span class="text-sm text-gray-700">{{ record.date|date:"M d, Y" }}</span>
+                                </div>
+                                <span class="text-xs font-medium {% if record.status %}text-green-700{% else %}text-red-700{% endif %}">
+                                    {% if record.status %}Present{% else %}Absent{% endif %}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="border-t border-gray-200 pt-4">
+                        <p class="text-sm text-gray-500 text-center italic">No attendance records yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="bg-white rounded-xl shadow-md p-12 text-center">
+            <div class="max-w-md mx-auto">
+                <svg class="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                </svg>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">No Courses Enrolled</h3>
+                <p class="text-gray-600 mb-6">You are not enrolled in any courses yet. Please contact your administrator.</p>
+                <a href="{% url 'dashboard' %}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200">
+                    Go to Main Dashboard
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
