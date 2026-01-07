@@ -34,14 +34,21 @@ def register(request):
 @login_required
 def dashboard(request):
     """
-    Main dashboard - redirects teachers to teacher_dashboard, others see general dashboard.
+    Main dashboard - redirects teachers to teacher_dashboard, students to student_dashboard, others see general dashboard.
     """
     # Check if user is a teacher and redirect to teacher dashboard
     try:
         Teacher.objects.get(user=request.user)
         return redirect('teacher_dashboard')
     except Teacher.DoesNotExist:
-        pass  # Not a teacher, show general dashboard
+        pass  # Not a teacher, check if student
+    
+    # Check if user is a student and redirect to student dashboard
+    try:
+        Student.objects.get(user=request.user)
+        return redirect('student_dashboard')
+    except Student.DoesNotExist:
+        pass  # Not a student, show general dashboard
     
     # Get statistics for the general dashboard
     total_students = Student.objects.count()
@@ -114,6 +121,83 @@ def teacher_dashboard(request):
     }
     
     return render(request, 'core/teacher_dashboard.html', context)
+
+@login_required
+def student_dashboard(request):
+    """
+    Student Dashboard - Shows courses enrolled and attendance records for the logged-in student.
+    Only accessible by users who have a Student profile linked to their account.
+    """
+    # Check if user has a Student profile
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        # User is not a student - deny access
+        raise Http404("You must be a student to access this page.")
+    
+    # Get all courses the student is enrolled in
+    courses = Course.objects.filter(students=student).select_related('teacher').prefetch_related('students')
+    
+    # Prepare course data with attendance statistics
+    course_data = []
+    total_present = 0
+    total_absent = 0
+    total_classes = 0
+    
+    for course in courses:
+        # Get attendance records for this student in this course
+        attendance_records = Attendance.objects.filter(
+            student=student,
+            course=course
+        ).order_by('-date')
+        
+        # Count attendance statistics
+        present_count = attendance_records.filter(status=True).count()
+        absent_count = attendance_records.filter(status=False).count()
+        total_records = attendance_records.count()
+        
+        # Calculate attendance percentage
+        attendance_percentage = 0
+        if total_records > 0:
+            attendance_percentage = round((present_count / total_records) * 100, 1)
+        
+        # Get recent attendance (last 5 records)
+        recent_attendance = attendance_records[:5]
+        
+        # Get teacher name
+        teacher_name = course.teacher.name
+        
+        course_data.append({
+            'course': course,
+            'teacher_name': teacher_name,
+            'present_count': present_count,
+            'absent_count': absent_count,
+            'total_records': total_records,
+            'attendance_percentage': attendance_percentage,
+            'recent_attendance': recent_attendance,
+        })
+        
+        # Aggregate totals
+        total_present += present_count
+        total_absent += absent_count
+        total_classes += total_records
+    
+    # Calculate overall attendance percentage
+    overall_percentage = 0
+    if total_classes > 0:
+        overall_percentage = round((total_present / total_classes) * 100, 1)
+    
+    context = {
+        'student': student,
+        'course_data': course_data,
+        'total_courses': courses.count(),
+        'total_present': total_present,
+        'total_absent': total_absent,
+        'total_classes': total_classes,
+        'overall_percentage': overall_percentage,
+    }
+    
+    return render(request, 'core/student_dashboard.html', context)
 
 @login_required
 def bulk_attendance(request):

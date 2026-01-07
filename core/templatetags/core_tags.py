@@ -1,5 +1,5 @@
 from django import template
-from core.models import Teacher
+from core.models import Teacher, Student
 
 register = template.Library()
 
@@ -12,4 +12,14 @@ def is_teacher(user):
     if not user or not user.is_authenticated:
         return False
     return Teacher.objects.filter(user=user).exists()
+
+@register.simple_tag
+def is_student(user):
+    """
+    Check if a user is a student.
+    Returns True if user has a Student profile, False otherwise.
+    """
+    if not user or not user.is_authenticated:
+        return False
+    return Student.objects.filter(user=user).exists()
 
