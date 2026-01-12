@@ -7,6 +7,17 @@
     <title>{% block title %}Student Management System{% endblock %}</title>
     {% tailwind_css %}
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
         /* Ensure all form inputs have black text */
         input[type="text"],
         input[type="email"],
@@ -198,6 +209,15 @@
                             <a href="{% url 'dashboard' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if request.resolver_match.url_name == 'dashboard' %}text-indigo-600 bg-indigo-50{% endif %}">
                                 Dashboard
                             </a>
+                            <a href="{% url 'manage_courses' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if 'manage_courses' in request.resolver_match.url_name or 'add_course' in request.resolver_match.url_name or 'edit_course' in request.resolver_match.url_name or 'delete_course' in request.resolver_match.url_name %}text-indigo-600 bg-indigo-50{% endif %}">
+                                Courses
+                            </a>
+                            <a href="{% url 'manage_teachers' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if 'manage_teachers' in request.resolver_match.url_name or 'add_teacher' in request.resolver_match.url_name or 'edit_teacher' in request.resolver_match.url_name or 'delete_teacher' in request.resolver_match.url_name %}text-indigo-600 bg-indigo-50{% endif %}">
+                                Teachers
+                            </a>
+                            <a href="{% url 'manage_students' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if 'manage_students' in request.resolver_match.url_name or 'add_student' in request.resolver_match.url_name or 'edit_student' in request.resolver_match.url_name or 'delete_student' in request.resolver_match.url_name %}text-indigo-600 bg-indigo-50{% endif %}">
+                                Students
+                            </a>
                             <a href="{% url 'attendance_reports' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if 'attendance' in request.resolver_match.url_name %}text-indigo-600 bg-indigo-50{% endif %}">
                                 Reports
                             </a>
@@ -289,6 +309,9 @@
                 <a href="{% url 'calendar' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Calendar</a>
                 {% elif user.is_staff or user.is_superuser %}
                 <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Dashboard</a>
+                <a href="{% url 'manage_courses' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Courses</a>
+                <a href="{% url 'manage_teachers' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Teachers</a>
+                <a href="{% url 'manage_students' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Students</a>
                 <a href="{% url 'attendance_reports' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Reports</a>
                 <a href="{% url 'audit_logs' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">Audit Logs</a>
                 {% endif %}
@@ -399,8 +422,11 @@
     </script>
     {% endif %}
 
-    {% block content %}
-    {% endblock %}
+    <!-- Main Content Container -->
+    <div class="min-h-screen w-full">
+        {% block content %}
+        {% endblock %}
+    </div>
 
 </body>
 </html>

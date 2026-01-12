@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.http import Http404, HttpResponse, JsonResponse, HttpResponseForbidden
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q, Avg, Sum
@@ -8,13 +8,15 @@ from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.views.decorators.http import require_http_methods
 import csv
 import json
 from datetime import date, datetime, timedelta
 
 from .forms import (
     AttendanceForm, UserRegistrationForm, AttendanceFilterForm,
-    BulkAttendanceForm, GradeForm, AssignmentForm, EventForm
+    BulkAttendanceForm, GradeForm, AssignmentForm, EventForm,
+    CourseForm, TeacherForm, StudentForm
 )
 from .models import (
     Course, Attendance, Student, Teacher, AuditLog,
@@ -27,6 +29,47 @@ from .utils import (
 )
 
 # Create your views here.
+
+def custom_login(request, role=None):
+    """
+    Custom login view with role-based sections
+    """
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        if username and password:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                
+                # Redirect based on role
+                try:
+                    Teacher.objects.get(user=user)
+                    return redirect('teacher_dashboard')
+                except Teacher.DoesNotExist:
+                    pass
+                
+                try:
+                    Student.objects.get(user=user)
+                    return redirect('student_dashboard')
+                except Student.DoesNotExist:
+                    pass
+                
+                # Admin or regular user
+                return redirect('dashboard')
+            else:
+                messages.error(request, 'Invalid username or password.')
+        else:
+            messages.error(request, 'Please provide both username and password.')
+    
+    context = {
+        'selected_role': role,
+    }
+    return render(request, 'core/login.html', context)
 
 def register(request):
     """
@@ -779,6 +822,335 @@ def add_event(request):
             pass
     
     return render(request, 'core/add_event.html', {'form': form})
+
+# Admin Management Views
+@login_required
+@admin_required
+def manage_courses(request):
+    """List all courses"""
+    courses = Course.objects.select_related('teacher').prefetch_related('students').all().order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        courses = courses.filter(
+            Q(name__icontains=search_query) |
+            Q(code__icontains=search_query) |
+            Q(teacher__name__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(courses, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'total_courses': courses.count(),
+    }
+    return render(request, 'core/admin/manage_courses.html', context)
+
+@login_required
+@admin_required
+def add_course(request):
+    """Add a new course"""
+    if request.method == 'POST':
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            course = form.save()
+            messages.success(request, f'Course "{course.name}" has been created successfully.')
+            return redirect('manage_courses')
+    else:
+        form = CourseForm()
+    
+    return render(request, 'core/admin/course_form.html', {
+        'form': form,
+        'title': 'Add Course',
+        'action': 'Add'
+    })
+
+@login_required
+@admin_required
+def edit_course(request, course_id):
+    """Edit an existing course"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if request.method == 'POST':
+        form = CourseForm(request.POST, instance=course)
+        if form.is_valid():
+            course = form.save()
+            messages.success(request, f'Course "{course.name}" has been updated successfully.')
+            return redirect('manage_courses')
+    else:
+        form = CourseForm(instance=course)
+    
+    return render(request, 'core/admin/course_form.html', {
+        'form': form,
+        'course': course,
+        'title': 'Edit Course',
+        'action': 'Update'
+    })
+
+@login_required
+@admin_required
+def delete_course(request, course_id):
+    """Delete a course"""
+    course = get_object_or_404(Course, id=course_id)
+    
+    if request.method == 'POST':
+        course_name = course.name
+        course.delete()
+        messages.success(request, f'Course "{course_name}" has been deleted successfully.')
+        return redirect('manage_courses')
+    
+    return render(request, 'core/admin/delete_course.html', {'course': course})
+
+@login_required
+@admin_required
+def manage_teachers(request):
+    """List all teachers"""
+    teachers = Teacher.objects.select_related('user').all().order_by('name')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        teachers = teachers.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(subject__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(teachers, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'total_teachers': teachers.count(),
+    }
+    return render(request, 'core/admin/manage_teachers.html', context)
+
+@login_required
+@admin_required
+def add_teacher(request):
+    """Add a new teacher"""
+    if request.method == 'POST':
+        form = TeacherForm(request.POST)
+        if form.is_valid():
+            teacher = form.save(commit=False)
+            
+            # Create user if requested
+            create_user = form.cleaned_data.get('create_user', False)
+            if create_user:
+                username = form.cleaned_data.get('username', '').strip()
+                password = form.cleaned_data.get('password', '').strip()
+                
+                if username and password:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=teacher.email,
+                        password=password,
+                        is_active=True,
+                        is_staff=False,
+                        is_superuser=False,
+                    )
+                    teacher.user = user
+            
+            teacher.save()
+            messages.success(request, f'Teacher "{teacher.name}" has been created successfully.')
+            return redirect('manage_teachers')
+    else:
+        form = TeacherForm()
+    
+    return render(request, 'core/admin/teacher_form.html', {
+        'form': form,
+        'title': 'Add Teacher',
+        'action': 'Add'
+    })
+
+@login_required
+@admin_required
+def edit_teacher(request, teacher_id):
+    """Edit an existing teacher"""
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        form = TeacherForm(request.POST, instance=teacher)
+        if form.is_valid():
+            teacher = form.save(commit=False)
+            
+            # Create user if requested and doesn't exist
+            create_user = form.cleaned_data.get('create_user', False)
+            if create_user and not teacher.user:
+                username = form.cleaned_data.get('username', '').strip()
+                password = form.cleaned_data.get('password', '').strip()
+                
+                if username and password:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=teacher.email,
+                        password=password,
+                        is_active=True,
+                        is_staff=False,
+                        is_superuser=False,
+                    )
+                    teacher.user = user
+            
+            teacher.save()
+            messages.success(request, f'Teacher "{teacher.name}" has been updated successfully.')
+            return redirect('manage_teachers')
+    else:
+        form = TeacherForm(instance=teacher)
+        # Pre-fill username if user exists
+        if teacher.user:
+            form.fields['username'].initial = teacher.user.username
+    
+    return render(request, 'core/admin/teacher_form.html', {
+        'form': form,
+        'teacher': teacher,
+        'title': 'Edit Teacher',
+        'action': 'Update'
+    })
+
+@login_required
+@admin_required
+def delete_teacher(request, teacher_id):
+    """Delete a teacher"""
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        teacher_name = teacher.name
+        teacher.delete()
+        messages.success(request, f'Teacher "{teacher_name}" has been deleted successfully.')
+        return redirect('manage_teachers')
+    
+    return render(request, 'core/admin/delete_teacher.html', {'teacher': teacher})
+
+@login_required
+@admin_required
+def manage_students(request):
+    """List all students"""
+    students = Student.objects.select_related('user').all().order_by('roll_no')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        students = students.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(roll_no__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(students, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'total_students': students.count(),
+    }
+    return render(request, 'core/admin/manage_students.html', context)
+
+@login_required
+@admin_required
+def add_student(request):
+    """Add a new student"""
+    if request.method == 'POST':
+        form = StudentForm(request.POST)
+        if form.is_valid():
+            student = form.save(commit=False)
+            
+            # Create user if requested
+            create_user = form.cleaned_data.get('create_user', False)
+            if create_user:
+                username = form.cleaned_data.get('username', '').strip()
+                password = form.cleaned_data.get('password', '').strip()
+                
+                if username and password:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=student.email,
+                        password=password,
+                        is_active=True,
+                        is_staff=False,
+                        is_superuser=False,
+                    )
+                    student.user = user
+            
+            student.save()
+            messages.success(request, f'Student "{student.name}" has been created successfully.')
+            return redirect('manage_students')
+    else:
+        form = StudentForm()
+    
+    return render(request, 'core/admin/student_form.html', {
+        'form': form,
+        'title': 'Add Student',
+        'action': 'Add'
+    })
+
+@login_required
+@admin_required
+def edit_student(request, student_id):
+    """Edit an existing student"""
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        form = StudentForm(request.POST, instance=student)
+        if form.is_valid():
+            student = form.save(commit=False)
+            
+            # Create user if requested and doesn't exist
+            create_user = form.cleaned_data.get('create_user', False)
+            if create_user and not student.user:
+                username = form.cleaned_data.get('username', '').strip()
+                password = form.cleaned_data.get('password', '').strip()
+                
+                if username and password:
+                    user = User.objects.create_user(
+                        username=username,
+                        email=student.email,
+                        password=password,
+                        is_active=True,
+                        is_staff=False,
+                        is_superuser=False,
+                    )
+                    student.user = user
+            
+            student.save()
+            messages.success(request, f'Student "{student.name}" has been updated successfully.')
+            return redirect('manage_students')
+    else:
+        form = StudentForm(instance=student)
+        # Pre-fill username if user exists
+        if student.user:
+            form.fields['username'].initial = student.user.username
+    
+    return render(request, 'core/admin/student_form.html', {
+        'form': form,
+        'student': student,
+        'title': 'Edit Student',
+        'action': 'Update'
+    })
+
+@login_required
+@admin_required
+def delete_student(request, student_id):
+    """Delete a student"""
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        student_name = student.name
+        student.delete()
+        messages.success(request, f'Student "{student_name}" has been deleted successfully.')
+        return redirect('manage_students')
+    
+    return render(request, 'core/admin/delete_student.html', {'student': student})
 
 # Error handlers
 def handler403(request, exception):

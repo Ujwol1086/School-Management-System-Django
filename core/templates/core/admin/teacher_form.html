@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Student Management System{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 w-full">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <a href="{% url 'manage_teachers' %}" class="inline-flex items-center text-sm text-gray-600 hover:text-indigo-600 mb-4">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Teachers
+            </a>
+            <h1 class="text-3xl font-bold text-gray-900">{{ title }}</h1>
+            <p class="mt-1 text-sm text-gray-600">Fill in the teacher information below</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                <!-- Name -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Subject -->
+                <div>
+                    <label for="{{ form.subject.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Subject <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.subject }}
+                    {% if form.subject.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.subject.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- User Account Section -->
+                <div class="border-t border-gray-200 pt-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">User Account</h3>
+                    
+                    <!-- Create User Checkbox -->
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            {{ form.create_user }}
+                            <span class="ml-2 text-sm text-gray-700">Create user account for login</span>
+                        </label>
+                    </div>
+
+                    <!-- Username and Password (shown when checkbox is checked) -->
+                    <div id="user-account-fields" class="space-y-4 {% if not teacher.user %}hidden{% endif %}">
+                        <div>
+                            <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Username <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                Password {% if not teacher.user %}<span class="text-red-500">*</span>{% endif %}
+                            </label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+                            {% endif %}
+                            {% if teacher.user %}
+                            <p class="mt-1 text-xs text-gray-500">Leave blank to keep current password</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if teacher and teacher.user %}
+                    <p class="text-sm text-green-600 mt-2">✓ User account exists: {{ teacher.user.username }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                    <a href="{% url 'manage_teachers' %}" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                        {{ action }} Teacher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Show/hide user account fields based on checkbox
+    document.getElementById('{{ form.create_user.id_for_label }}').addEventListener('change', function() {
+        const fields = document.getElementById('user-account-fields');
+        if (this.checked) {
+            fields.classList.remove('hidden');
+        } else {
+            fields.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}
+

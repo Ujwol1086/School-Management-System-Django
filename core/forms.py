@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import Attendance, Course, Student, Grade, Assignment, Event
+from .models import Attendance, Course, Student, Grade, Assignment, Event, Teacher
 
 class AttendanceForm(forms.ModelForm):
     class Meta:
@@ -197,3 +197,130 @@ class UserRegistrationForm(UserCreationForm):
         if User.objects.filter(email=email).exists():
             raise forms.ValidationError("A user with this email already exists.")
         return email
+
+class CourseForm(forms.ModelForm):
+    """Form for creating/editing courses"""
+    class Meta:
+        model = Course
+        fields = ['name', 'code', 'teacher', 'description', 'students']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'code': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'Optional course code'}),
+            'teacher': forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'students': forms.SelectMultiple(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'size': '10'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['teacher'].queryset = Teacher.objects.all().order_by('name')
+        self.fields['students'].queryset = Student.objects.all().order_by('roll_no')
+        self.fields['code'].required = False
+
+class TeacherForm(forms.ModelForm):
+    """Form for creating/editing teachers"""
+    create_user = forms.BooleanField(
+        required=False,
+        label="Create user account",
+        widget=forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'})
+    )
+    username = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'Username for login'})
+    )
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'Password'})
+    )
+    
+    class Meta:
+        model = Teacher
+        fields = ['name', 'email', 'subject']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'email': forms.EmailInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'subject': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+        }
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            # Check if email is already used by another teacher
+            existing = Teacher.objects.filter(email=email).exclude(pk=self.instance.pk if self.instance.pk else None)
+            if existing.exists():
+                raise forms.ValidationError("A teacher with this email already exists.")
+        return email
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        create_user = cleaned_data.get('create_user')
+        username = cleaned_data.get('username', '').strip()
+        password = cleaned_data.get('password', '').strip()
+        
+        if create_user:
+            if not username:
+                raise forms.ValidationError("Username is required when creating a user account.")
+            if not password:
+                raise forms.ValidationError("Password is required when creating a user account.")
+            if User.objects.filter(username=username).exclude(pk=self.instance.user.pk if self.instance and self.instance.user else None).exists():
+                raise forms.ValidationError("A user with this username already exists.")
+        
+        return cleaned_data
+
+class StudentForm(forms.ModelForm):
+    """Form for creating/editing students"""
+    create_user = forms.BooleanField(
+        required=False,
+        label="Create user account",
+        widget=forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'})
+    )
+    username = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'Username for login'})
+    )
+    password = forms.CharField(
+        required=False,
+        widget=forms.PasswordInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'Password'})
+    )
+    
+    class Meta:
+        model = Student
+        fields = ['name', 'roll_no', 'email', 'dob']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'roll_no': forms.NumberInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'email': forms.EmailInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'dob': forms.DateInput(attrs={'type': 'date', 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+        }
+    
+    def clean_roll_no(self):
+        roll_no = self.cleaned_data.get('roll_no')
+        if roll_no:
+            existing = Student.objects.filter(roll_no=roll_no).exclude(pk=self.instance.pk if self.instance.pk else None)
+            if existing.exists():
+                raise forms.ValidationError("A student with this roll number already exists.")
+        return roll_no
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email:
+            existing = Student.objects.filter(email=email).exclude(pk=self.instance.pk if self.instance.pk else None)
+            if existing.exists():
+                raise forms.ValidationError("A student with this email already exists.")
+        return email
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        create_user = cleaned_data.get('create_user')
+        username = cleaned_data.get('username', '').strip()
+        password = cleaned_data.get('password', '').strip()
+        
+        if create_user:
+            if not username:
+                raise forms.ValidationError("Username is required when creating a user account.")
+            if not password:
+                raise forms.ValidationError("Password is required when creating a user account.")
+            if User.objects.filter(username=username).exclude(pk=self.instance.user.pk if self.instance and self.instance.user else None).exists():
+                raise forms.ValidationError("A user with this username already exists.")
+        
+        return cleaned_data

@@ -21,8 +21,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [  
     path('admin/', admin.site.urls),
 
-    #Authentication
-    path('login/', auth_views.LoginView.as_view(), name='login'),
+    #Authentication (using custom views from core)
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 
     # Password Management

@@ -1,0 +1,133 @@
+{% load static tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    {% tailwind_css %}
+</head>
+
+<body class="bg-white overflow-x-hidden ">
+
+<!-- ================= HEADER ================= -->
+<header class="absolute top-0 left-0 w-full z-20">
+    <div class="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                🎓
+            </div>
+            <span class="text-white font-bold text-xl">Statisda</span>
+        </div>
+
+        <nav class="hidden md:flex items-center space-x-8 text-sm text-indigo-100">
+            <a href="#" class="hover:text-white">Home</a>
+            <a href="#" class="hover:text-white">Pricing</a>
+            <a href="#" class="hover:text-white">Use Cases</a>
+            <a href="#" class="hover:text-white">FAQ</a>
+            <a href="#" class="hover:text-white">Company</a>
+        </nav>
+
+        <a href="{% url 'login_role' 'admin' %}"
+           class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium">
+            Login
+        </a>
+    </div>
+</header>
+
+<!-- ================= HERO SECTION ================= -->
+<section class="relative bg-gradient-to-br from-indigo-900 via-indigo-800 to-blue-900 pt-40 pb-64 text-center text-white">
+
+    <div class="max-w-3xl mx-auto px-6">
+        <span class="inline-block mb-6 px-4 py-1 rounded-full bg-indigo-700 text-xs tracking-wide">
+            Get Your Free Consultation Now
+        </span>
+
+        <h1 class="text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+            Manage your team <br class="hidden md:block">
+            easily with task management
+        </h1>
+
+        <p class="text-indigo-200 max-w-2xl mx-auto mb-8">
+            Statisda is a school management solution that provides a personalized portal
+            for administrators, teachers, and students.
+        </p>
+
+        <a href="{% url 'register' %}"
+           class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-full font-semibold">
+            Get Started
+        </a>
+    </div>
+
+    <!-- Decorative shapes -->
+    <div class="absolute right-20 top-40 text-yellow-400 text-4xl">☾</div>
+</section>
+
+<!-- ================= DASHBOARD PREVIEW ================= -->
+<section class="-mt-40 relative z-10">
+    <div class="max-w-6xl mx-auto px-6">
+        <div class="bg-white rounded-2xl shadow-2xl p-6">
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                <!-- Admin -->
+                <div class="border rounded-xl p-6 text-center hover:shadow-lg transition">
+                    <div class="text-red-600 text-4xl mb-4">🛡️</div>
+                    <h3 class="font-semibold text-lg mb-2">Administrator</h3>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Full system access and management
+                    </p>
+                    <a href="{% url 'login_role' 'admin' %}"
+                       class="block bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg">
+                        Admin Login
+                    </a>
+                </div>
+
+                <!-- Teacher -->
+                <div class="border rounded-xl p-6 text-center hover:shadow-lg transition">
+                    <div class="text-blue-600 text-4xl mb-4">👩‍🏫</div>
+                    <h3 class="font-semibold text-lg mb-2">Teacher</h3>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Manage courses and attendance
+                    </p>
+                    <a href="{% url 'login_role' 'teacher' %}"
+                       class="block bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
+                        Teacher Login
+                    </a>
+                </div>
+
+                <!-- Student -->
+                <div class="border rounded-xl p-6 text-center hover:shadow-lg transition">
+                    <div class="text-green-600 text-4xl mb-4">🎓</div>
+                    <h3 class="font-semibold text-lg mb-2">Student</h3>
+                    <p class="text-sm text-gray-500 mb-4">
+                        View grades and attendance
+                    </p>
+                    <a href="{% url 'login_role' 'student' %}"
+                       class="block bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg">
+                        Student Login
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================= TRUST SECTION ================= -->
+<section class="py-24 text-center">
+    <h4 class="text-gray-700 font-semibold mb-8">
+        Trusted by companies like
+    </h4>
+    <div class="flex justify-center gap-10 text-gray-400 text-2xl">
+        🏫 🎯 📊 🔒 ⚡
+    </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="border-t py-6 text-center text-sm text-gray-500">
+    © 2024 Student Management System. All rights reserved.
+</footer>
+
+</body>
+</html>
