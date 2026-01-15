@@ -70,13 +70,19 @@ def custom_login(request, role=None):
                 # Role validation passed - proceed with login
                 login(request, user)
                 
-                # Redirect based on actual role
+                # Redirect based on selected role
+                if selected_role == 'teacher':
+                    return redirect('teacher_dashboard')
+                elif selected_role == 'student':
+                    return redirect('student_dashboard')
+                elif selected_role == 'admin':
+                    return redirect('dashboard')
+                
+                # Fallback if no specific role selected or matched (shouldn't happen with above logic)
                 if is_teacher:
                     return redirect('teacher_dashboard')
                 elif is_student:
                     return redirect('student_dashboard')
-                elif is_admin:
-                    return redirect('dashboard')
                 else:
                     return redirect('dashboard')
             else:
@@ -115,19 +121,24 @@ def dashboard(request):
     """
     Main dashboard - redirects teachers to teacher_dashboard, students to student_dashboard, others see general dashboard.
     """
-    # Check if user is a teacher and redirect to teacher dashboard
-    try:
-        Teacher.objects.get(user=request.user)
-        return redirect('teacher_dashboard')
-    except Teacher.DoesNotExist:
-        pass  # Not a teacher, check if student
-    
-    # Check if user is a student and redirect to student dashboard
-    try:
-        Student.objects.get(user=request.user)
-        return redirect('student_dashboard')
-    except Student.DoesNotExist:
-        pass  # Not a student, show general dashboard
+    # If user is admin (staff or superuser), show the admin dashboard
+    # This takes precedence over Teacher/Student roles to allow Admins to manage the system
+    if request.user.is_staff or request.user.is_superuser:
+        pass
+    else:
+        # Check if user is a teacher and redirect to teacher dashboard
+        try:
+            Teacher.objects.get(user=request.user)
+            return redirect('teacher_dashboard')
+        except Teacher.DoesNotExist:
+            pass  # Not a teacher, check if student
+        
+        # Check if user is a student and redirect to student dashboard
+        try:
+            Student.objects.get(user=request.user)
+            return redirect('student_dashboard')
+        except Student.DoesNotExist:
+            pass  # Not a student, show general dashboard
     
     # Get statistics for the general dashboard (Admin view)
     total_students = Student.objects.count()
