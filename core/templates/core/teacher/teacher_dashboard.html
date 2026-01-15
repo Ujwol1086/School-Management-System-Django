@@ -4,13 +4,15 @@
 {% block title %}Teachers - Student Management System{% endblock %}
 
 {% block content %}
-<div class="p-6 h-full">
+<div class="w-full h-full px-10 py-8">
     <!-- Page Header -->
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-semibold text-gray-900">Teachers</h1>
         <div class="flex items-center space-x-3">
-            <a href="{% url 'export_attendance' %}?format=csv" class="text-sm text-gray-600 hover:text-gray-900">Export CSV</a>
-            <a href="{% url 'bulk_attendance' %}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">
+            <a href="{% url 'export_attendance' %}?format=csv" class="text-sm font-medium text-blue-600 hover:underline">
+                Export CSV
+            </a>
+            <a href="{% url 'bulk_attendance' %}" class="px-5 py-2 bg-[#2b6ff7] hover:bg-[#1f5fe0] text-white text-sm font-medium rounded-lg transition-colors">
                 Add Teachers
             </a>
         </div>
@@ -76,7 +78,7 @@
     </div>
     {% else %}
     <!-- Empty State -->
-    <div class="bg-white border border-gray-200 rounded-lg p-16 text-center">
+    <div class="bg-white border border-gray-200 rounded-xl flex items-center justify-center min-h-[400px] text-center">
         <div class="max-w-md mx-auto">
             <h3 class="text-2xl font-semibold text-gray-900 mb-2">No Teachers at this time</h3>
             <p class="text-sm text-gray-600">Teachers will appear here after they enroll in your school.</p>

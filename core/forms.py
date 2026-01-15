@@ -257,6 +257,11 @@ class TeacherForm(forms.ModelForm):
         username = cleaned_data.get('username', '').strip()
         password = cleaned_data.get('password', '').strip()
         
+        # Auto-enable create_user if credentials are provided
+        if (username or password) and not create_user:
+            create_user = True
+            cleaned_data['create_user'] = True
+        
         if create_user:
             if not username:
                 raise forms.ValidationError("Username is required when creating a user account.")
@@ -314,6 +319,11 @@ class StudentForm(forms.ModelForm):
         create_user = cleaned_data.get('create_user')
         username = cleaned_data.get('username', '').strip()
         password = cleaned_data.get('password', '').strip()
+        
+        # Auto-enable create_user if credentials are provided
+        if (username or password) and not create_user:
+            create_user = True
+            cleaned_data['create_user'] = True
         
         if create_user:
             if not username:
