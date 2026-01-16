@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.utils import timezone
-from .models import Attendance, Course, Student, Grade, Assignment, Event, Teacher
+from .models import Attendance, Course, Student, Grade, Assignment, Event, Teacher, StudyMaterial
 
 class AttendanceForm(forms.ModelForm):
     class Meta:
@@ -158,6 +158,44 @@ class EventForm(forms.ModelForm):
         if start_date and end_date:
             if end_date < start_date:
                 raise forms.ValidationError("End date cannot be before start date.")
+        
+        return cleaned_data
+
+class StudyMaterialForm(forms.ModelForm):
+    class Meta:
+        model = StudyMaterial
+        fields = ['course', 'title', 'description', 'file', 'file_url', 'material_type', 'is_published']
+        widgets = {
+            'course': forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'title': forms.TextInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'description': forms.Textarea(attrs={'rows': 4, 'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'file': forms.FileInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'accept': '.pdf,.doc,.docx,.ppt,.pptx,.txt,.mp4,.avi,.mov'}),
+            'file_url': forms.URLInput(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'placeholder': 'https://example.com/material'}),
+            'material_type': forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'}),
+            'is_published': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filter courses for teacher
+        if user:
+            from .models import Teacher
+            try:
+                teacher = Teacher.objects.get(user=user)
+                self.fields['course'].queryset = Course.objects.filter(teacher=teacher)
+            except Teacher.DoesNotExist:
+                self.fields['course'].queryset = Course.objects.none()
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        file = cleaned_data.get('file')
+        file_url = cleaned_data.get('file_url')
+        
+        # At least one of file or file_url must be provided
+        if not file and not file_url:
+            raise forms.ValidationError("Either a file or a URL must be provided.")
         
         return cleaned_data
 

@@ -196,6 +196,9 @@
                             <a href="{% url 'my_grades' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if request.resolver_match.url_name == 'my_grades' %}text-indigo-600 bg-indigo-50{% endif %}">
                                 My Grades
                             </a>
+                            <a href="{% url 'student_study_materials' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if request.resolver_match.url_name == 'student_study_materials' %}text-indigo-600 bg-indigo-50{% endif %}">
+                                Study Materials
+                            </a>
                             <a href="{% url 'calendar' %}" class="nav-item px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors whitespace-nowrap {% if request.resolver_match.url_name == 'calendar' %}text-indigo-600 bg-indigo-50{% endif %}">
                                 Calendar
                             </a>

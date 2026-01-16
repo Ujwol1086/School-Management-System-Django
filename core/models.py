@@ -231,3 +231,42 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.start_date}"
+
+class StudyMaterial(models.Model):
+    """Study materials uploaded by teachers for courses"""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='study_materials')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='study_materials/%Y/%m/%d/', null=True, blank=True)
+    file_url = models.URLField(blank=True, help_text="External URL for the material (if not uploading a file)")
+    material_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('pdf', 'PDF'),
+            ('document', 'Document'),
+            ('video', 'Video'),
+            ('link', 'Link'),
+            ('other', 'Other'),
+        ],
+        default='other'
+    )
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='study_materials_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=True, help_text="Published materials are visible to students")
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['course', 'created_at']),
+            models.Index(fields=['is_published', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.course} - {self.title}"
+
+    def get_file_url(self):
+        """Return file URL or external URL"""
+        if self.file:
+            return self.file.url
+        return self.file_url
