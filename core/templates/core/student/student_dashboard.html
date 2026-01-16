@@ -14,14 +14,19 @@
                     <h1 class="text-3xl font-bold text-gray-900">My Dashboard</h1>
                     <p class="mt-1 text-sm text-gray-500">Welcome, {{ student.name }}! Track your courses and attendance.</p>
                 </div>
-                <div class="bg-blue-100 rounded-lg px-4 py-2">
-                    <p class="text-sm font-medium text-blue-800">Roll No: <span class="text-lg font-bold">{{ student.roll_no }}</span></p>
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'student_study_materials' %}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        View Study Materials
+                    </a>
+                    <div class="bg-blue-100 rounded-lg px-4 py-2">
+                        <p class="text-sm font-medium text-blue-800">Roll No: <span class="text-lg font-bold">{{ student.roll_no }}</span></p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Overall Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <!-- Total Courses -->
             <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-blue-500">
                 <div class="flex items-center justify-between">
@@ -81,6 +86,21 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Study Materials -->
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-200 p-6 border-l-4 border-indigo-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">Study Materials</p>
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ total_study_materials }}</p>
+                    </div>
+                    <div class="bg-indigo-100 rounded-full p-3">
+                        <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Course Cards Grid -->
@@ -127,6 +147,35 @@
                             <p class="text-2xl font-bold text-gray-700">{{ item.total_records }}</p>
                         </div>
                     </div>
+
+                    <!-- Study Materials Section -->
+                    {% if item.study_materials_count > 0 %}
+                    <div class="border-t border-gray-200 pt-4 mb-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Study Materials</h3>
+                            <a href="{% url 'student_study_materials' %}?course={{ item.course.id }}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                                View All ({{ item.study_materials_count }})
+                            </a>
+                        </div>
+                        <div class="space-y-2">
+                            {% for material in item.study_materials %}
+                            <div class="flex items-center justify-between bg-indigo-50 rounded-lg px-3 py-2 hover:bg-indigo-100 transition-colors">
+                                <div class="flex items-center flex-1 min-w-0">
+                                    <svg class="w-4 h-4 text-indigo-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                    <span class="text-sm text-gray-700 truncate">{{ material.title }}</span>
+                                </div>
+                                {% if material.get_file_url %}
+                                <a href="{{ material.get_file_url }}" target="_blank" class="ml-2 text-xs text-indigo-600 hover:text-indigo-800 font-medium flex-shrink-0">
+                                    Open
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <!-- Recent Attendance -->
                     {% if item.recent_attendance %}

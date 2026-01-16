@@ -11,7 +11,13 @@ urlpatterns = [
     # Dashboards
     path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('teacher/students-classes/', views.teacher_students_classes, name='teacher_students_classes'),
+    path('teacher/settings-profile/', views.teacher_settings_profile, name='teacher_settings_profile'),
+    path('teacher/exams/', views.teacher_exams, name='teacher_exams'),
+    path('teacher/study-materials/', views.manage_study_materials, name='manage_study_materials'),
+    path('teacher/study-materials/add/', views.add_study_material, name='add_study_material'),
+    path('teacher/study-materials/<int:material_id>/delete/', views.delete_study_material, name='delete_study_material'),
     path('student-dashboard/', views.student_dashboard, name='student_dashboard'),
+    path('student/study-materials/', views.student_study_materials, name='student_study_materials'),
     
     # Attendance
     path('attendance/', views.mark_attendance, name='mark_attendance'),

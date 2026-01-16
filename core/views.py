@@ -16,11 +16,11 @@ from datetime import date, datetime, timedelta
 from .forms import (
     AttendanceForm, UserRegistrationForm, AttendanceFilterForm,
     BulkAttendanceForm, GradeForm, AssignmentForm, EventForm,
-    CourseForm, TeacherForm, StudentForm
+    CourseForm, TeacherForm, StudentForm, StudyMaterialForm
 )
 from .models import (
     Course, Attendance, Student, Teacher, AuditLog,
-    Grade, Notification, Assignment, Event
+    Grade, Notification, Assignment, Event, StudyMaterial
 )
 from .decorators import teacher_required, student_required, admin_or_teacher_required, admin_required
 from .utils import (
@@ -306,6 +306,237 @@ def teacher_students_classes(request):
     return render(request, 'core/teacher/students_classes.html', context)
 
 @login_required
+@teacher_required
+def teacher_settings_profile(request):
+    """
+    Settings and Profile page for teachers.
+    """
+    teacher = Teacher.objects.get(user=request.user)
+    
+    if request.method == 'POST':
+        # Handle profile update
+        teacher.name = request.POST.get('name', teacher.name)
+        teacher.email = request.POST.get('email', teacher.email)
+        teacher.subject = request.POST.get('subject', teacher.subject)
+        teacher.save()
+        
+        # Update user info
+        user = request.user
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name = request.POST.get('last_name', user.last_name)
+        user.email = request.POST.get('user_email', user.email)
+        user.save()
+        
+        messages.success(request, 'Profile updated successfully!')
+        return redirect('teacher_settings_profile')
+    
+    context = {
+        'teacher': teacher,
+        'user': request.user,
+    }
+    
+    return render(request, 'core/teacher/settings_profile.html', context)
+
+@login_required
+@teacher_required
+def teacher_exams(request):
+    """
+    Exams page - Shows all exams (grades and exam events) for teacher's courses.
+    """
+    teacher = Teacher.objects.get(user=request.user)
+    courses = Course.objects.filter(teacher=teacher)
+    
+    # Get all grades (which can be exams) for teacher's courses
+    grades = Grade.objects.filter(course__teacher=teacher).select_related('student', 'course').order_by('-due_date', '-created_at')
+    
+    # Get exam events
+    exam_events = Event.objects.filter(
+        course__teacher=teacher,
+        event_type='exam'
+    ).select_related('course').order_by('-start_date')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        grades = grades.filter(
+            Q(assignment_name__icontains=search_query) |
+            Q(student__name__icontains=search_query) |
+            Q(course__name__icontains=search_query)
+        )
+        exam_events = exam_events.filter(
+            Q(title__icontains=search_query) |
+            Q(course__name__icontains=search_query)
+        )
+    
+    # Filter by course
+    course_filter = request.GET.get('course', '')
+    if course_filter:
+        try:
+            selected_course = Course.objects.get(id=course_filter, teacher=teacher)
+            grades = grades.filter(course=selected_course)
+            exam_events = exam_events.filter(course=selected_course)
+        except Course.DoesNotExist:
+            pass
+    
+    # Pagination for grades
+    paginator = Paginator(grades, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'teacher': teacher,
+        'courses': courses,
+        'page_obj': page_obj,
+        'exam_events': exam_events,
+        'search_query': search_query,
+        'course_filter': course_filter,
+        'total_grades': grades.count(),
+        'total_exam_events': exam_events.count(),
+    }
+    
+    return render(request, 'core/teacher/exams.html', context)
+
+@login_required
+@teacher_required
+def manage_study_materials(request):
+    """
+    Manage study materials - List all materials for teacher's courses
+    """
+    teacher = Teacher.objects.get(user=request.user)
+    courses = Course.objects.filter(teacher=teacher)
+    
+    # Get all study materials for teacher's courses
+    materials = StudyMaterial.objects.filter(course__teacher=teacher).select_related('course', 'created_by').order_by('-created_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        materials = materials.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(course__name__icontains=search_query)
+        )
+    
+    # Filter by course
+    course_filter = request.GET.get('course', '')
+    if course_filter:
+        try:
+            selected_course = Course.objects.get(id=course_filter, teacher=teacher)
+            materials = materials.filter(course=selected_course)
+        except Course.DoesNotExist:
+            pass
+    
+    # Pagination
+    paginator = Paginator(materials, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'teacher': teacher,
+        'courses': courses,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'course_filter': course_filter,
+        'total_materials': materials.count(),
+    }
+    
+    return render(request, 'core/teacher/manage_study_materials.html', context)
+
+@login_required
+@teacher_required
+def add_study_material(request):
+    """
+    Add a new study material
+    """
+    if request.method == 'POST':
+        form = StudyMaterialForm(request.POST, request.FILES, user=request.user)
+        
+        if form.is_valid():
+            material = form.save(commit=False)
+            material.created_by = request.user
+            material.save()
+            messages.success(request, f'Study material "{material.title}" added successfully!')
+            return redirect('manage_study_materials')
+    else:
+        form = StudyMaterialForm(user=request.user)
+    
+    return render(request, 'core/teacher/add_study_material.html', {'form': form})
+
+@login_required
+@teacher_required
+def delete_study_material(request, material_id):
+    """
+    Delete a study material
+    """
+    material = get_object_or_404(StudyMaterial, id=material_id, course__teacher__user=request.user)
+    
+    if request.method == 'POST':
+        material_title = material.title
+        material.delete()
+        messages.success(request, f'Study material "{material_title}" deleted successfully!')
+        return redirect('manage_study_materials')
+    
+    return render(request, 'core/teacher/delete_study_material.html', {'material': material})
+
+@login_required
+@student_required
+def student_study_materials(request):
+    """
+    View study materials for enrolled courses
+    """
+    student = Student.objects.get(user=request.user)
+    enrolled_courses = student.course_set.all()
+    
+    # Get all published study materials for enrolled courses
+    materials = StudyMaterial.objects.filter(
+        course__in=enrolled_courses,
+        is_published=True
+    ).select_related('course', 'created_by').order_by('-created_at')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        materials = materials.filter(
+            Q(title__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(course__name__icontains=search_query)
+        )
+    
+    # Filter by course
+    course_filter = request.GET.get('course', '')
+    if course_filter:
+        try:
+            selected_course = Course.objects.get(id=course_filter, students=student)
+            materials = materials.filter(course=selected_course)
+        except Course.DoesNotExist:
+            pass
+    
+    # Group materials by course
+    materials_by_course = {}
+    for material in materials:
+        course_name = material.course.name
+        if course_name not in materials_by_course:
+            materials_by_course[course_name] = []
+        materials_by_course[course_name].append(material)
+    
+    # Pagination
+    paginator = Paginator(materials, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'student': student,
+        'enrolled_courses': enrolled_courses,
+        'page_obj': page_obj,
+        'materials_by_course': materials_by_course,
+        'search_query': search_query,
+        'course_filter': course_filter,
+        'total_materials': materials.count(),
+    }
+    
+    return render(request, 'core/student/study_materials.html', context)
+
+@login_required
 @student_required
 def student_dashboard(request):
     """
@@ -334,6 +565,17 @@ def student_dashboard(request):
         attendance_percentage = calculate_attendance_percentage(student, course)
         recent_attendance = attendance_records[:5]
         
+        # Get study materials for this course
+        study_materials = StudyMaterial.objects.filter(
+            course=course,
+            is_published=True
+        ).order_by('-created_at')[:3]  # Get 3 most recent materials
+        
+        study_materials_count = StudyMaterial.objects.filter(
+            course=course,
+            is_published=True
+        ).count()
+        
         course_data.append({
             'course': course,
             'teacher_name': course.teacher.name,
@@ -342,6 +584,8 @@ def student_dashboard(request):
             'total_records': total_records,
             'attendance_percentage': attendance_percentage,
             'recent_attendance': recent_attendance,
+            'study_materials': study_materials,
+            'study_materials_count': study_materials_count,
         })
         
         total_present += present_count
@@ -358,6 +602,12 @@ def student_dashboard(request):
     # Get recent grades
     recent_grades = Grade.objects.filter(student=student).order_by('-created_at')[:5]
     
+    # Get total study materials count
+    total_study_materials = StudyMaterial.objects.filter(
+        course__in=courses,
+        is_published=True
+    ).count()
+    
     context = {
         'student': student,
         'course_data': course_data,
@@ -368,6 +618,7 @@ def student_dashboard(request):
         'overall_percentage': overall_percentage,
         'unread_notifications': unread_notifications,
         'recent_grades': recent_grades,
+        'total_study_materials': total_study_materials,
     }
     
     return render(request, 'core/student/student_dashboard.html', context)

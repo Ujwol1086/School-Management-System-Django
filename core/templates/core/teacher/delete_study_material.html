@@ -1,0 +1,43 @@
+{% extends "core/teacher/base_teacher.html" %}
+{% load static %}
+
+{% block title %}Delete Study Material - Student Management System{% endblock %}
+
+{% block content %}
+<div class="w-full h-full px-10 py-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            <h1 class="text-2xl font-semibold text-gray-900 mb-4">Delete Study Material</h1>
+            
+            <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p class="text-sm text-yellow-800">
+                    Are you sure you want to delete this study material? This action cannot be undone.
+                </p>
+            </div>
+            
+            <div class="mb-6">
+                <h2 class="text-lg font-medium text-gray-900 mb-2">{{ material.title }}</h2>
+                <div class="text-sm text-gray-600 space-y-1">
+                    <p><strong>Course:</strong> {{ material.course.name }}</p>
+                    <p><strong>Type:</strong> {{ material.get_material_type_display }}</p>
+                    <p><strong>Created:</strong> {{ material.created_at|date:"M d, Y" }}</p>
+                    {% if material.description %}
+                    <p><strong>Description:</strong> {{ material.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <form method="post" class="flex justify-end space-x-4">
+                {% csrf_token %}
+                <a href="{% url 'manage_study_materials' %}" class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium">
+                    Cancel
+                </a>
+                <button type="submit" class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium">
+                    Delete Material
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
