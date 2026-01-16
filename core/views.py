@@ -245,6 +245,67 @@ def teacher_dashboard(request):
     return render(request, 'core/teacher/teacher_dashboard.html', context)
 
 @login_required
+@teacher_required
+def teacher_students_classes(request):
+    """
+    Students/Classes page - Shows all students and classes for the logged-in teacher.
+    """
+    teacher = Teacher.objects.get(user=request.user)
+    courses = Course.objects.filter(teacher=teacher).select_related('teacher').prefetch_related('students')
+    
+    # Get all unique students enrolled in teacher's courses
+    all_students = Student.objects.filter(course__teacher=teacher).distinct().order_by('roll_no')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        all_students = all_students.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(roll_no__icontains=search_query)
+        )
+        courses = courses.filter(
+            Q(name__icontains=search_query) |
+            Q(code__icontains=search_query)
+        )
+    
+    # Prepare student data with course counts for this teacher
+    student_data = []
+    for student in all_students:
+        # Count courses for this student that belong to this teacher
+        student_courses_count = student.course_set.filter(teacher=teacher).count()
+        student_data.append({
+            'student': student,
+            'course_count': student_courses_count,
+        })
+    
+    # Prepare course data with student counts
+    course_data = []
+    for course in courses:
+        student_count = course.students.count()
+        course_data.append({
+            'course': course,
+            'student_count': student_count,
+        })
+    
+    # Pagination for students
+    paginator = Paginator(student_data, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'teacher': teacher,
+        'courses': courses,
+        'course_data': course_data,
+        'page_obj': page_obj,
+        'search_query': search_query,
+        'total_students': len(student_data),
+        'total_courses': courses.count(),
+    }
+    
+    return render(request, 'core/teacher/students_classes.html', context)
+
+@login_required
 @student_required
 def student_dashboard(request):
     """
