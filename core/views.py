@@ -189,6 +189,10 @@ def mark_attendance(request):
     
     if form.is_valid():
         attendance = form.save(commit=False)
+        # Explicitly ensure status is set from form data
+        # CheckboxInput: checked = True, unchecked = False (not in POST)
+        status = form.cleaned_data.get('status', False)
+        attendance.status = bool(status)  # Ensure it's a boolean
         attendance.marked_by = request.user
         attendance._current_user = request.user
         attendance.save()
@@ -200,7 +204,8 @@ def mark_attendance(request):
             ip_address=get_client_ip(request)
         )
         
-        messages.success(request, f'Attendance marked successfully for {attendance.student.name}.')
+        status_text = 'Present' if attendance.status else 'Absent'
+        messages.success(request, f'Attendance marked as {status_text} for {attendance.student.name}.')
         return redirect('mark_attendance')
     
     return render(request, 'core/teacher/attendance.html', {
@@ -328,18 +333,50 @@ def bulk_attendance(request):
     course_id_from_url = request.GET.get('course')
     students = None
     selected_course = None
-    form = BulkAttendanceForm(user=request.user)
+    attendance_date = None
+    existing_attendance = {}  # Dictionary to store existing attendance status
+    present_student_ids = set()  # Set of student IDs marked as present
+    form = BulkAttendanceForm(user=request.user, data=request.GET if request.method == 'GET' else None)
     
-    # If course ID provided in URL, pre-select it
-    if course_id_from_url:
+    # Handle GET requests (form submission to load students)
+    if request.method == 'GET' and form.is_valid():
+        selected_course = form.cleaned_data.get('course')
+        attendance_date = form.cleaned_data.get('date')
+    elif course_id_from_url:
+        # If course ID provided in URL, pre-select it
         try:
             selected_course = Course.objects.get(id=course_id_from_url)
             if is_teacher and selected_course.teacher != teacher:
                 selected_course = None
             else:
-                students = selected_course.students.all().order_by('roll_no')
+                # Pre-select course in form
+                form.fields['course'].initial = selected_course.id
+                # Try to get date from GET parameters
+                date_str = request.GET.get('date')
+                if date_str:
+                    try:
+                        from datetime import datetime
+                        attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    except:
+                        pass
         except Course.DoesNotExist:
             pass
+    
+    # If we have course and date, fetch students and existing attendance
+    if selected_course and attendance_date:
+        # Get students list
+        students = selected_course.students.all().order_by('roll_no')
+        
+        # Fetch existing attendance records for this date
+        existing_records = Attendance.objects.filter(
+            course=selected_course,
+            date=attendance_date
+        ).select_related('student')
+        
+        for record in existing_records:
+            existing_attendance[record.student.id] = record.status
+            if record.status:
+                present_student_ids.add(record.student.id)
     
     if request.method == "POST":
         form = BulkAttendanceForm(request.POST, user=request.user)
@@ -387,13 +424,16 @@ def bulk_attendance(request):
                     marked_count += 1
             
             messages.success(request, f'Attendance marked for {marked_count} students successfully.')
-            return redirect('bulk_attendance')
+            return redirect('teacher_dashboard')
     
     return render(request, 'core/teacher/bulk_attendance.html', {
         'form': form,
         'courses': courses,
         'students': students,
         'selected_course': selected_course,
+        'attendance_date': attendance_date,
+        'existing_attendance': existing_attendance,
+        'present_student_ids': present_student_ids,
         'today': date.today()
     })
 

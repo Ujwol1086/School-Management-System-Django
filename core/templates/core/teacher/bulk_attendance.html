@@ -14,9 +14,7 @@
         </div>
         {% endif %}
         
-        <form method="post" id="bulkAttendanceForm">
-            {% csrf_token %}
-            
+        <form method="get" id="bulkAttendanceForm">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label for="{{ form.course.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
@@ -48,7 +46,19 @@
                 </div>
             </div>
             
-            {% if students %}
+            <div class="mb-6">
+                <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                    Load Students
+                </button>
+            </div>
+        </form>
+        
+        {% if students %}
+        <form method="post" id="saveAttendanceForm">
+            {% csrf_token %}
+            <input type="hidden" name="course" value="{{ selected_course.id }}">
+            <input type="hidden" name="date" value="{{ attendance_date|date:'Y-m-d' }}">
+            
             <div class="mt-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">
                     Mark Attendance for {{ selected_course.name }}
@@ -91,6 +101,7 @@
                                     <input type="checkbox" 
                                            name="status_{{ student.id }}" 
                                            id="status_{{ student.id }}"
+                                           {% if student.id in present_student_ids %}checked{% endif %}
                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                 </td>
                             </tr>
@@ -104,13 +115,31 @@
                         Save Attendance
                     </button>
                 </div>
-            </div>
-            {% else %}
-            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
-                <p>Please select a course and date to view enrolled students.</p>
-            </div>
-            {% endif %}
         </form>
+        {% else %}
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+            <p>Please select a course and date, then click "Load Students" to view enrolled students.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Success Popup Modal -->
+<div id="successModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-16 h-16 mx-auto bg-green-100 rounded-full mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 text-center mb-2">Success!</h3>
+            <p class="text-gray-600 text-center mb-6" id="successMessage">Attendance saved successfully!</p>
+            <div class="flex justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+            <p class="text-sm text-gray-500 text-center mt-4">Redirecting to dashboard...</p>
+        </div>
     </div>
 </div>
 
@@ -127,17 +156,34 @@ function selectNone() {
     });
 }
 
-// Auto-submit when course is selected
-document.getElementById('{{ form.course.id_for_label }}').addEventListener('change', function() {
-    if (this.value && document.getElementById('{{ form.date.id_for_label }}').value) {
-        this.form.submit();
-    }
-});
-
-// Auto-submit when date is selected
-document.getElementById('{{ form.date.id_for_label }}').addEventListener('change', function() {
-    if (this.value && document.getElementById('{{ form.course.id_for_label }}').value) {
-        this.form.submit();
+// Handle form submission with popup
+document.addEventListener('DOMContentLoaded', function() {
+    const saveForm = document.getElementById('saveAttendanceForm');
+    if (saveForm) {
+        const handleSubmit = function(e) {
+            e.preventDefault();
+            
+            // Count total students
+            const totalCount = document.querySelectorAll('input[type="checkbox"][name^="status_"]').length;
+            
+            // Update success message
+            const message = `Attendance marked for ${totalCount} students successfully!`;
+            document.getElementById('successMessage').textContent = message;
+            
+            // Show popup
+            const modal = document.getElementById('successModal');
+            modal.classList.remove('hidden');
+            
+            // Show popup for 1.5 seconds, then submit form normally
+            // The server will handle the redirect
+            setTimeout(function() {
+                // Remove the event listener and submit
+                saveForm.removeEventListener('submit', handleSubmit);
+                saveForm.submit();
+            }, 1500);
+        };
+        
+        saveForm.addEventListener('submit', handleSubmit);
     }
 });
 </script>

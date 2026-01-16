@@ -15,6 +15,20 @@ class AttendanceForm(forms.ModelForm):
             'status': forms.CheckboxInput(attrs={'class': 'h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded'}),
         }
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make status field not required so unchecked checkbox works correctly
+        self.fields['status'].required = False
+    
+    def clean_status(self):
+        # CheckboxInput: if checked, returns True; if unchecked, not in POST, returns False
+        # Explicitly handle to ensure boolean value
+        status = self.cleaned_data.get('status')
+        # If status is None (checkbox unchecked), default to False
+        if status is None:
+            return False
+        return bool(status)
+    
     def clean_date(self):
         date = self.cleaned_data.get('date')
         if date and date > timezone.now().date():
@@ -54,7 +68,7 @@ class BulkAttendanceForm(forms.Form):
     course = forms.ModelChoiceField(
         queryset=Course.objects.none(),
         required=True,
-        widget=forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white', 'onchange': 'this.form.submit()'})
+        widget=forms.Select(attrs={'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 bg-white'})
     )
     date = forms.DateField(
         required=True,
