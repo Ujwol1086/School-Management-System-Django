@@ -111,6 +111,7 @@
     --radius-lg: 0.5rem;
     --radius-xl: 0.75rem;
     --radius-2xl: 1rem;
+    --animate-spin: spin 1s linear infinite;
     --default-transition-duration: 150ms;
     --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     --default-font-family: var(--font-sans);
@@ -268,6 +269,149 @@
   }
 }
 @layer utilities {
+  @layer daisyui.l1.l2.l3 {
+    .modal {
+      pointer-events: none;
+      visibility: hidden;
+      position: fixed;
+      inset: calc(0.25rem * 0);
+      margin: calc(0.25rem * 0);
+      display: grid;
+      height: 100%;
+      max-height: none;
+      width: 100%;
+      max-width: none;
+      align-items: center;
+      justify-items: center;
+      background-color: transparent;
+      padding: calc(0.25rem * 0);
+      color: inherit;
+      transition: visibility 0.3s allow-discrete, background-color 0.3s ease-out, opacity 0.1s ease-out;
+      overflow: clip;
+      overscroll-behavior: contain;
+      z-index: 999;
+      scrollbar-gutter: auto;
+    }
+    .modal::backdrop {
+      display: none;
+    }
+  }
+  @layer daisyui.l1.l2 {
+    .modal.modal-open, .modal[open], .modal:target, .modal-toggle:checked + .modal {
+      pointer-events: auto;
+      visibility: visible;
+      opacity: 100%;
+      transition: visibility 0s allow-discrete, background-color 0.3s ease-out, opacity 0.1s ease-out;
+      background-color: oklch(0% 0 0/ 0.4);
+    }
+    .modal.modal-open .modal-box, .modal[open] .modal-box, .modal:target .modal-box, .modal-toggle:checked + .modal .modal-box {
+      translate: 0 0;
+      scale: 1;
+      opacity: 1;
+    }
+    :root:has(.modal.modal-open), :root:has(.modal[open]), :root:has(.modal:target), :root:has(.modal-toggle:checked + .modal) {
+      --page-has-backdrop: 1;
+      --page-overflow: hidden;
+      --page-scroll-bg: var(--page-scroll-bg-on);
+      --page-scroll-gutter: stable;
+      --page-scroll-transition: var(--page-scroll-transition-on);
+      animation: set-page-has-scroll forwards;
+      animation-timeline: scroll();
+    }
+    @starting-style {
+      .modal.modal-open, .modal[open], .modal:target, .modal-toggle:checked + .modal {
+        opacity: 0%;
+      }
+    }
+  }
+  @layer daisyui.l1.l2.l3 {
+    .tab {
+      position: relative;
+      display: inline-flex;
+      cursor: pointer;
+      appearance: none;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      webkit-user-select: none;
+      user-select: none;
+      --tab-p: 0.75rem;
+      --tab-bg: var(--color-base-100);
+      --tab-border-color: var(--color-base-300);
+      --tab-radius-ss: 0;
+      --tab-radius-se: 0;
+      --tab-radius-es: 0;
+      --tab-radius-ee: 0;
+      --tab-order: 0;
+      --tab-radius-min: calc(0.75rem - var(--border));
+      --tab-radius-limit: min(var(--radius-field), var(--tab-radius-min));
+      --tab-radius-grad: #0000 calc(69% - var(--border)),
+      var(--tab-border-color) calc(69% - var(--border) + 0.25px),
+      var(--tab-border-color) 69%,
+      var(--tab-bg) calc(69% + 0.25px);
+      border-color: #0000;
+      order: var(--tab-order);
+      height: var(--tab-height);
+      font-size: 0.875rem;
+      padding-inline: var(--tab-p);
+    }
+    @media (hover: hover) {
+      .tab:hover {
+        color: var(--color-base-content);
+      }
+    }
+    .tab:is(input[type="radio"]) {
+      min-width: fit-content;
+    }
+    .tab:is(input[type="radio"]):after {
+      --tw-content: attr(aria-label);
+      content: var(--tw-content);
+    }
+    .tab:is(label) {
+      position: relative;
+    }
+    .tab:is(label) input {
+      position: absolute;
+      inset: calc(0.25rem * 0);
+      cursor: pointer;
+      appearance: none;
+      opacity: 0%;
+    }
+    .tab:checked + .tab-content, .tab:is(label:has(:checked)) + .tab-content, .tab:is(.tab-active, [aria-selected="true"], [aria-current="true"], [aria-current="page"]) + .tab-content {
+      display: block;
+    }
+    .tab:not( :checked, label:has(:checked), :hover, .tab-active, [aria-selected="true"], [aria-current="true"], [aria-current="page"] ) {
+      color: var(--color-base-content);
+    }
+    @supports (color: color-mix(in lab, red, red)) {
+      .tab:not( :checked, label:has(:checked), :hover, .tab-active, [aria-selected="true"], [aria-current="true"], [aria-current="page"] ) {
+        color: color-mix(in oklab, var(--color-base-content) 50%, transparent);
+      }
+    }
+    .tab:not(input):empty {
+      flex-grow: 1;
+      cursor: default;
+    }
+    .tab:focus {
+      --tw-outline-style: none;
+      outline-style: none;
+    }
+    @media (forced-colors: active) {
+      .tab:focus {
+        outline: 2px solid transparent;
+        outline-offset: 2px;
+      }
+    }
+    .tab:focus-visible, .tab:is(label:has(:checked:focus-visible)) {
+      outline: 2px solid currentColor;
+      outline-offset: -5px;
+    }
+    .tab[disabled] {
+      pointer-events: none;
+      opacity: 40%;
+    }
+  }
   @layer daisyui.l1.l2.l3 {
     .menu {
       display: flex;
@@ -1464,6 +1608,9 @@
   .sticky {
     position: sticky;
   }
+  .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
   .inset-y-0 {
     inset-block: calc(var(--spacing) * 0);
   }
@@ -1611,6 +1758,26 @@
   .z-50 {
     z-index: 50;
   }
+  @layer daisyui.l1.l2.l3 {
+    .tab-content {
+      order: var(--tabcontent-order);
+      display: none;
+      border-color: transparent;
+      --tabcontent-radius-ss: var(--radius-box);
+      --tabcontent-radius-se: var(--radius-box);
+      --tabcontent-radius-es: var(--radius-box);
+      --tabcontent-radius-ee: var(--radius-box);
+      --tabcontent-order: 1;
+      width: 100%;
+      height: calc(100% - var(--tab-height) + var(--border));
+      margin: var(--tabcontent-margin);
+      border-width: var(--border);
+      border-start-start-radius: var(--tabcontent-radius-ss);
+      border-start-end-radius: var(--tabcontent-radius-se);
+      border-end-start-radius: var(--tabcontent-radius-es);
+      border-end-end-radius: var(--tabcontent-radius-ee);
+    }
+  }
   .container {
     width: 100%;
   }
@@ -1682,6 +1849,9 @@
       padding-inline: calc(0.25rem * 0);
       opacity: 0%;
     }
+  }
+  .mx-4 {
+    margin-inline: calc(var(--spacing) * 4);
   }
   .mx-auto {
     margin-inline: auto;
@@ -1764,6 +1934,9 @@
   .mr-6 {
     margin-right: calc(var(--spacing) * 6);
   }
+  .-mb-px {
+    margin-bottom: -1px;
+  }
   .mb-1 {
     margin-bottom: calc(var(--spacing) * 1);
   }
@@ -1832,6 +2005,17 @@
     }
   }
   @layer daisyui.l1.l2.l3 {
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      --tabs-height: auto;
+      --tabs-direction: row;
+      --tab-height: calc(var(--size-field, 0.25rem) * 10);
+      height: var(--tabs-height);
+      flex-direction: var(--tabs-direction);
+    }
+  }
+  @layer daisyui.l1.l2.l3 {
     .stat {
       display: inline-grid;
       width: 100%;
@@ -1890,6 +2074,9 @@
   }
   .block {
     display: block;
+  }
+  .contents {
+    display: contents;
   }
   .flex {
     display: flex;
@@ -1954,6 +2141,9 @@
   .min-h-0 {
     min-height: calc(var(--spacing) * 0);
   }
+  .min-h-\[200px\] {
+    min-height: 200px;
+  }
   .min-h-\[400px\] {
     min-height: 400px;
   }
@@ -1986,6 +2176,9 @@
   }
   .w-12 {
     width: calc(var(--spacing) * 12);
+  }
+  .w-16 {
+    width: calc(var(--spacing) * 16);
   }
   .w-24 {
     width: calc(var(--spacing) * 24);
@@ -2044,6 +2237,9 @@
   }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
+  }
+  .animate-spin {
+    animation: var(--animate-spin);
   }
   @layer daisyui.l1.l2.l3 {
     .link {
@@ -2243,6 +2439,10 @@
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 1px;
   }
+  .border-b-2 {
+    border-bottom-style: var(--tw-border-style);
+    border-bottom-width: 2px;
+  }
   .border-l-4 {
     border-left-style: var(--tw-border-style);
     border-left-width: 4px;
@@ -2288,6 +2488,9 @@
   }
   .border-green-500 {
     border-color: var(--color-green-500);
+  }
+  .border-indigo-600 {
+    border-color: var(--color-indigo-600);
   }
   .border-orange-500 {
     border-color: var(--color-orange-500);
@@ -2486,6 +2689,9 @@
   }
   .p-12 {
     padding: calc(var(--spacing) * 12);
+  }
+  .px-1 {
+    padding-inline: calc(var(--spacing) * 1);
   }
   .px-1\.5 {
     padding-inline: calc(var(--spacing) * 1.5);
@@ -2896,6 +3102,11 @@
   @media (hover: hover) {
     .group-hover\:opacity-100:is(:where(.group):hover *) {
       opacity: 100%;
+    }
+  }
+  @media (hover: hover) {
+    .hover\:border-gray-300:hover {
+      border-color: var(--color-gray-300);
     }
   }
   @media (hover: hover) {
@@ -3706,6 +3917,11 @@
 @property --tw-duration {
   syntax: "*";
   inherits: false;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 @layer properties {
   @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
